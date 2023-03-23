@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html>
+  <head>
+		<meta charset="UTF-8">
+		<title>MMC RIM Rating Curves (Alpha)</title>
+		 <script src="https://cdnjs.cloudflare.com/ajax/libs/regression/2.0.1/regression.min.js"></script>
+		<style>
+			  body {
+				font-family: Arial, sans-serif;
+				background-color: #f8f8f8;
+				color: #333;
+				margin-left: 19px;
+			  }
+
+			  h1, h2, h3, h4, h5, h6 {
+				font-weight: bold;
+				margin-top: 0;
+				margin-bottom: 1rem;
+			  }
+			
+			  h1 {
+			   background-color: black;
+			   text-align: center;
+				color: White; 
+				padding: 5px;
+			  }
+			  p {
+				margin-top: 0;
+				margin-bottom: 1rem;
+				line-height: 1.5;
+			  }
+
+			  label {
+				display: block;
+				margin-bottom: 0.5rem;
+			  }
+
+			  input[type="text"], input[type="number"], textarea {
+				padding: 0.5rem;
+				border-radius: 0.25rem;
+				border: 1px solid #ccc;
+				font-size: 1rem;
+				line-height: 1.5;
+				width: 30%;
+				box-sizing: border-box;
+				margin-bottom: 1rem;
+			  }
+			  
+			  .textarea-ras{
+				width: 30%;
+				height: 230px;
+				
+			  }
+			  input[type="submit"] {
+				background-color: #007bff;
+				border-color: #007bff;
+				color: #fff;
+				padding: 0.5rem 1rem;
+				border-radius: 0.25rem;
+				font-size: 1rem;
+				line-height: 1.5;
+				cursor: pointer;
+			  }
+
+			  .container {
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: ;
+				margin-left: 19px;
+			  }
+
+			  .container > div {
+				flex-basis: calc(33.33% - 1rem);
+				margin-bottom: 100rem;
+			  }
+
+			  button {
+				
+			  } 
+			  
+			  .final-curve-div{
+			   position: fixed;
+			   margin-left: 75%;
+			   overflow-y: scroll; 
+			   height:800px;
+			  }
+			  .advancedOptimize{
+			   display:none
+			  }
+			  
+			  .chart-container-div {
+				
+				height: 594px; 
+				width: 1178px;
+				margin:0 auto;
+				position: absolute;
+				top: 60%;
+				left: 10%;
+				margin: -100px 0 0 -150px;
+				
+				border:1px solid black;
+			  }
+			  
+			  table {
+					border-collapse: collapse;
+				  }
+				  
+				  tr {
+					border: 1px solid black;
+					background-color: ;
+				  }
+				  
+				  th {
+					border: 1px solid black;
+					color: black;
+					padding: 3px;
+				  }
+				  td {
+					border: 1px solid black;
+					color: black;
+					padding: 3px;
+				  }}
+			  
+		</style>
+		<script>
+		
+			
+			function copy_flow() {
+					
+				const tableElem = document.getElementById('myTable');
+				columnIndex=2
+				// Get all the rows in the table
+				const rows = tableElem.getElementsByTagName("tr");
+				// Create a new array to store the column data
+				const columnData = [];
+				// Loop through each row and get the data in the specified column
+				for (let i = 0; i < rows.length; i++) {
+					const cell = rows[i].getElementsByTagName("td")[columnIndex];
+					if (cell) {
+					  columnData.push(cell.textContent);
+					}
+				}
+				// Create a textarea element to copy the column data to the clipboard
+				const textarea = document.createElement("textarea");
+				textarea.value = columnData.join("\n");
+				document.body.appendChild(textarea);
+				textarea.select();
+				document.execCommand("copy");
+				
+  
+				alert("copied to clipboard")
+				document.body.removeChild(textarea);
+					
+			}
+			
+			function create_inital_final_curve_tabular(revise=false,index_of_flows_that_are_transition_only_yellow=[]) {
+					
+					if(revise===false){
+						final_curveX_elev=[]
+						final_curveY_flows=[]
+						for(u in yDataRASstage){
+							common_elev=yDataRASstage[u]
+							
+							usgs_flow=usgs_flowsX_limited_to_ras_elev[u]
+							ras_flow=xDataRASflow[u]
+							
+							
+							final_curveX_elev.push(common_elev)
+							
+							if(usgs_flow===null){
+								final_curveY_flows.push(ras_flow)	
+							}else{
+								final_curveY_flows.push(usgs_flow)
+							
+							}
+								
+						}
+					}
+				  
+				  
+				  // Get the table element by its ID
+				  const table = document.getElementById("myTable");
+				  
+				  
+				  var rowCount = table.rows.length; // Get number of rows
+				  for (var i = rowCount - 1; i > 0; i--) { // Loop through rows (excluding the header row)
+					table.deleteRow(i); // Remove row
+				  }
+				  
+				  
+				  // Loop through the initial values array and create a new row for each value
+				  for (let i = 0; i < final_curveX_elev.length; i++) {
+					// Create a new table row
+					const row = table.insertRow();
+					
+					
+					
+					// Create a new table cell for the button column and create a new button element
+					const buttonCell = row.insertCell();
+					const button = document.createElement("button");
+					button.innerText = "+" //+ incrementValue.value.toString();
+					
+					// Create a new table cell for the button column and create a new button element
+					const buttonCell2 = row.insertCell();
+					const button2 = document.createElement("button");
+					button2.innerText = "-" //+ incrementValue.value.toString();
+					
+					// Create a new table cell for the value column and set its initial value
+					const valueCell = row.insertCell();
+					valueCell.innerHTML = final_curveY_flows[i];
+					if(index_of_flows_that_are_transition_only_yellow.includes(i)){
+						valueCell.style.backgroundColor='yellow'
+					}else if (index_of_flows_that_are_ras_only_grey.includes(i)){
+						valueCell.style.backgroundColor='lightgrey'
+					}else{
+						valueCell.style.backgroundColor='lightblue'
+					}
+					
+					const elevCell = row.insertCell();
+					elevCell.innerHTML = final_curveX_elev[i];
+					
+					
+					// Add a click event listener to the button that increases the value by 100
+					button.addEventListener("click", (event) => {
+					  event.preventDefault(); // Prevent the form from submitting	
+					  valueCell.innerHTML = parseInt(valueCell.innerHTML) + parseInt(incrementValue.value);
+					  create_final_curve_line_from_final_curve_adjuster();
+					  valueCell.style.backgroundColor='yellow'
+					});
+					
+					// Add a click event listener to the button that increases the value by 100
+					button2.addEventListener("click", (event) => {
+				      event.preventDefault();
+					  valueCell.innerHTML = parseInt(valueCell.innerHTML) - parseInt(incrementValue.value);
+					  create_final_curve_line_from_final_curve_adjuster();
+					  valueCell.style.backgroundColor='yellow'
+					});
+					
+					// Append the button to the button cell
+					buttonCell.appendChild(button);
+					buttonCell2.appendChild(button2);
+				  }
+				
+				create_graph()
+			}
+			
+			
+
+		</script>
+		<script>
+			const url = 'https://waterdata.usgs.gov/nwisweb/get_ratings?file_type=exsa&site_no=';
+
+			function autoLoad() {
+				const queryString = window.location.search;
+				const urlParams = new URLSearchParams(queryString);
+				if(urlParams.has('usgs_id')){
+					 
+					 document.getElementById("usgs-id").value=urlParams.get('usgs_id');
+					 document.getElementById("gage-0-in-88").value=urlParams.get('gage_0_in_88');
+					getRating()	
+					
+				}
+				
+				if(urlParams.has('ras')){
+					 ras=urlParams.get('ras');
+					 ras2=ras.split(",")
+					 ras3=""
+					 
+					 i=1
+					 for(j in ras2){
+						if(i % 2 == 0) {
+							ras3+=ras2[j] + "\r\n"
+						}else{
+							ras3+=ras2[j]  + "\t"
+						}
+						
+						i+=1
+					 
+					 }
+					 document.getElementById("data-input-ras").value=ras3
+					
+				}
+				
+				if(urlParams.has('r')){
+				  reach=urlParams.get('r');
+				  document.getElementById("banner").innerHTML="MMC RIM Rating Curves (Alpha) " + reach.replace("reach","Reach ") 
+				}
+			}
+
+			function ADD_ras_usgs_curves() {
+				create_graph();
+
+			}
+
+
+			function getRating() {
+
+				const usgs_id = document.getElementById("usgs_id").value;
+				getUSGScurve(usgs_id, (result) => {
+					document.getElementById("data-input-usgs").value=result
+			    })
+			 }
+			 
+
+
+
+			async function getUSGScurve(usgs_id,callback) {
+				const url = "https://waterdata.usgs.gov/nwisweb/get_ratings?file_type=exsa&site_no="; // prefix of web address
+				const gage_0_in_88=parseFloat(document.getElementById("gage-0-in-88").value)
+				const complete_url = url + usgs_id; // add text portions to create web address: http://waterdata.usgs.gov/nwisweb/get_ratings?file_type=exsa&site_no=03282000
+				 table_out2 = "";
+				  
+				try {
+					const response = await fetch(complete_url); // create variable with web page
+					const table = await response.text(); // download web page
+					
+					
+						
+					  for (const line of table.split("\n")) {
+						  if (line.length > 0 && line[0] !== "#" && line.indexOf("N") === -1) {
+							
+							const line_split = line.split("\t");
+
+							try {
+							  //if (line_split[line_split.length - 1] === "*") {
+								flow=parseInt(line_split[2])
+								stage=parseFloat(line_split[0])
+								elev=(stage + gage_0_in_88).toFixed(2)
+								table_out2 += flow.toString() + "\t" + elev.toString()   + "\r\n" ;
+							 
+							 // }
+							} catch {
+							  // do nothing
+							}
+						  }
+						}
+					const result2 = table_out2
+					callback(result2);
+					 
+					 
+				} catch (error) {
+					console.error(error);
+				}
+			}
+
+			</script>
+
+			<script>
+				final_curveX_elev=[]
+				final_curveY_flows=[]
+				
+				
+				
+
+				function create_final_curve_line_from_final_curve_adjuster() {
+					
+					final_curveX_elev=[]	
+					final_curveY_flows=[]	
+					table=document.getElementById("myTable")
+					
+					 for (var i = 1; i < table.rows.length; i++) {
+						var row = table.rows[i];
+						final_curveX_elev.push(parseFloat(row.cells[3].innerText))
+						final_curveY_flows.push(parseInt(row.cells[2].innerText))
+						 
+					 }
+					create_graph()
+				}
+				
+				function create_graph() {
+				  // Get the HTML table element
+				  // Get the HTML table element
+						var gage_0_in_88 = document.getElementById('gage-0-in-88');
+					  
+						/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+							var table = document.getElementById("data-input-usgs");
+						
+							  // Extract the data from the HTML table
+							   usgs_FLOW_X_labels = [];
+							   usgs_STAGE_Y_data = [];
+							   usgs_split=table.value.split("\n")
+								for (kk in usgs_split ) {
+									//var row = table.rows[i];
+									line=usgs_split[kk]
+									if(line.indexOf(",")>-1){delimiter=","}
+									if(line.indexOf("\t")>-1){delimiter="\t"}
+							
+									usgs_STAGE_Y_data.push(parseFloat(line.split(delimiter)[1])); 
+									usgs_FLOW_X_labels.push(parseFloat(line.split(delimiter)[0]));
+								}
+						
+							///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+							data=create_ras_line()
+							
+							ras_FLOW_X_2_labels=data[0]	//			yDataRASstage
+							ras_STGE_Y_2_data=data[1] //
+							
+							////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+							// return only new usgs that matches wse from ras 
+							
+							
+							
+							usgs_flowsX_limited_to_ras_elev=[]
+							usgs_elevY_limited_to_ras_elev=[]
+							lower_bound_usgs=20
+							limit_by_stage=true
+							
+							index_of_flows_that_are_ras_only_grey=[]
+							index_of_flows_that_are_usgs_only_blue=[]
+							
+							if(limit_by_stage===true){
+								prev_stage_usgs=0
+								for(j in ras_STGE_Y_2_data){
+									stage_ras=ras_STGE_Y_2_data[j]
+									flow_ras=ras_FLOW_X_2_labels[j]
+									found=false
+									
+									for(k in usgs_STAGE_Y_data){
+										stage_usgs=usgs_STAGE_Y_data[k]
+										flow_usgs=usgs_FLOW_X_labels[k]
+										if(stage_ras === stage_usgs){
+											index_of_flows_that_are_usgs_only_blue.push(parseInt(j))
+											usgs_flowsX_limited_to_ras_elev.push(flow_usgs)
+											usgs_elevY_limited_to_ras_elev.push(stage_ras)
+											found=true;
+										}
+										else if((stage_ras>prev_stage_usgs && stage_ras>stage_ras) && found===false){
+											if(flow_usgs===0){
+												usgs_flowsX_limited_to_ras_elev.push(null)   //.push(stage_ras)
+												index_of_flows_that_are_ras_only_grey.push(parseInt(j))
+											}
+											else{
+												index_of_flows_that_are_usgs_only_blue.push(parseInt(j))
+												usgs_flowsX_limited_to_ras_elev.push(flow_usgs)
+											}
+											usgs_elevY_limited_to_ras_elev.push(stage_ras)
+											found=true;
+										}
+										prev_stage_usgs=stage_usgs
+									}	
+									if( found===false){
+										
+										usgs_flowsX_limited_to_ras_elev.push(null)
+										usgs_elevY_limited_to_ras_elev.push(null)
+										index_of_flows_that_are_ras_only_grey.push(parseInt(j))
+										
+									}
+										
+								}
+							
+							}
+						////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
+							
+						const xValues1 =usgs_elevY_limited_to_ras_elev	/// usgs_flowsX_limited_to_ras_elev				 usgs_elevY_limited_to_ras_elev
+						const yValues1 =usgs_flowsX_limited_to_ras_elev	/// usgs_elevY_limited_to_ras_elev				 usgs_flowsX_limited_to_ras_elev
+											/// 
+						const xValues2 =ras_STGE_Y_2_data	/// ras_FLOW_X_2_labels			 ras_STGE_Y_2_data
+						const yValues2 =ras_FLOW_X_2_labels	/// ras_STGE_Y_2_data			 ras_FLOW_X_2_labels
+
+						const options = {
+						  type: 'line',
+						  data: {
+							datasets: [{
+								label: 'USGS Curve',
+								data: yValues1,
+								borderColor: 'blue'
+							  },
+							  {
+								label: 'RAS Curve',
+								data: yValues2,
+								borderColor: 'red',
+								xAxisID: 'x2' // Match dataset to other axis
+							  },
+							  {
+								label: 'Combined Curve',
+								data: final_curveY_flows,
+								borderColor: 'black',
+								xAxisID: 'x2' // Match dataset to other axis
+							  }
+							]
+						  },
+						  options: {
+							scales: {
+							  xAxes: [{
+								  type: 'category',
+								  labels: xValues2, // using identical stages, so use ras stage here as well as next category
+								  id: 'x',
+								  display: true // Set to false to hide the axis
+								},
+								{
+								  type: 'category',
+								  labels: xValues2,
+								  id: 'x2',
+								  display: false // using identical stages, so use ras stage here as well as next category
+								},
+								{
+								  type: 'category',
+								  labels: final_curveX_elev,
+								  id: 'x3',
+								  display: false // using identical stages, so use ras stage here as well as next category
+								}
+							  ]
+							}
+						  }
+						}
+
+						const ctx = document.getElementById('chartJSContainer').getContext('2d');
+						new Chart(ctx, options);			
+						
+				}  
+			</script>
+
+
+			<script>
+				function create_ras_line() {
+					var input = document.getElementById('data-input-ras');
+					
+					var dataString = input.value.trim();
+					if(dataString.length<3){return}
+					  dataArray = dataString.split('\n');
+					   xDataRASflow = [];
+					   yDataRASstage = [];
+					   
+					    if(dataArray.indexOf(",")>-1){delimiter=","}
+						if(dataArray.indexOf("\t")>-1){delimiter="\t"}
+						
+						
+					  for (var i = 0; i < dataArray.length; i++) {
+						
+						var xy = dataArray[i].split(delimiter);
+						x=+parseInt(xy[0].replace(",","").replace(",","").trim())
+						xDataRASflow.push(x); //flow
+						
+						y=+parseFloat(xy[1].trim()).toFixed(2)
+						yDataRASstage.push(y); //stage 
+					  }
+					// Get the canvas element and chart context
+					format=""
+					for(j in yDataRASstage){
+						stage= yDataRASstage[parseInt(j)]
+						flow = xDataRASflow[parseInt(j)]
+						format+=flow + "\t" + stage + "\n"
+					}
+					input.value=format;
+					return [xDataRASflow,yDataRASstage]
+				}
+
+			</script>
+			<script>
+
+				function openlink(d='curve'){
+				 if(d==='curve'){
+					id= document.getElementById('usgs-id');
+					href="http://waterdata.usgs.gov/nwisweb/get_ratings?file_type=exsa&site_no=" + id.value
+				 }
+				 else{
+					id= document.getElementById('usgs-id');
+					href="https://waterdata.usgs.gov/nwis/inventory?agency_code=USGS&site_no=" + id.value
+				 }
+				 
+				 window.open(href)
+
+			}
+
+
+
+			</script>
+			<script>
+				window.onload=function(){
+					autoLoad();
+					
+					const submitButton = document.getElementById('data-input-usgs-button');
+					submitButton.addEventListener('click', function(event) {
+						event.preventDefault(); // Prevent the form from submitting
+						
+						getRating();
+					});
+					
+					const submitButton2 = document.getElementById('create-graph');
+					submitButton2.addEventListener('click', function(event) {
+						event.preventDefault(); // Prevent the form from submitting
+						
+						ADD_ras_usgs_curves();
+					});
+					
+					const submitButton3 = document.getElementById('add-final-curve');
+					submitButton3.addEventListener('click', function(event) {
+						event.preventDefault(); // Prevent the form from submitting
+						
+						create_inital_final_curve_tabular();
+					});
+					
+					const submitButton4 = document.getElementById('copy-flow');
+					submitButton4.addEventListener('click', function(event) {
+						event.preventDefault(); // Prevent the form from submitting
+						
+						copy_flow();
+					});
+					
+					const submitButton5 = document.getElementById('non-linear-reg');
+					submitButton5.addEventListener('click', function(event) {
+						event.preventDefault(); // Prevent the form from submitting
+						
+						regression_start();
+					});
+					
+					let polyorder = document.getElementById('polyorder');
+					let removeOutliers = document.getElementById('removeOutliers');
+					let RAStieINuppper = document.getElementById('RAStieINuppper');
+					let RAStieINlower = document.getElementById('RAStieINlower');
+					let incrementValue = document.getElementById('incrementValue');
+					
+					
+				}	
+			
+				function getRating() {
+
+					const usgs_id = document.getElementById("usgs-id").value;
+					getUSGScurve(usgs_id, (result) => {
+					document.getElementById("data-input-usgs").value=result
+				  
+					})
+				 }
+			</script>
+			
+			<script>
+				<!-- https://cdnjs.cloudflare.com/ajax/libs/regression/2.0.1/regression.min.js -->
+				
+				// Define a function to compute the derivative of the polynomial equation
+				function derivative(coefficients, x) {
+				  let degree = coefficients.length - 1;
+				  let derivativeCoefficients = [];
+
+				  for (let i = 0; i < degree; i++) {
+					let exponent = degree - i;
+					derivativeCoefficients.push(exponent * coefficients[i]);
+				  }
+
+				  let result = 0;
+				  for (let i = 0; i < degree; i++) {
+					result += derivativeCoefficients[i] * Math.pow(x, degree - i - 1);
+				  }
+
+				  return result;
+				}
+
+
+				function regression_start(){
+					
+					//
+					combined_curve_XY_crossing=[]
+					
+					for(j in final_curveY_flows){
+						Ys=final_curveY_flows[j]
+						Xs=final_curveX_elev[j]
+						combined_curve_XY_crossing.push([Xs,Ys])
+					}
+					
+					
+					if(parseInt(RAStieINuppper.value)>0){
+						side_to_optimize="right"
+						yellow_upper=polynomial_regression(side_to_optimize)
+					}else{ yellow_upper=[]  }
+					
+					if(parseInt(RAStieINlower.value)<0){
+						side_to_optimize="left"
+						yellow_lower=polynomial_regression(side_to_optimize)
+					}else{ yellow_lower=[]  }
+					
+					
+					
+					index_of_flows_that_are_transition_only_yellow=yellow_lower.concat(yellow_upper)
+					create_graph();
+					create_inital_final_curve_tabular(revise=true,index_of_flows_that_are_transition_only_yellow) // with revise=true, then we don't want to re-create the initial, we only want to disply the new revised polynomial data.
+				
+				}	
+				
+				function polynomial_regression(side="right"){
+					const table = document.getElementById("myTable");
+					index_of_flows_that_are_transition_only_yellow=[]
+					index_of_ras_flows_to_replace=[]
+					// Use the combined array for further analysis or visualization
+					
+					if(side==="right"){
+						last_index_usgs=index_of_flows_that_are_usgs_only_blue.slice(-1)[0]
+						index_of_start_of_ras_flows_to_replace=last_index_usgs+1
+						max_ras_record_to_adjust= index_of_start_of_ras_flows_to_replace - 1 + parseInt(RAStieINuppper.value) 
+					}else{
+						//index_of_start_of_ras_flows_to_replace=index_of_flows_that_are_ras_only_grey[0]
+						
+						first_index_usgs=index_of_flows_that_are_usgs_only_blue[0]
+						index_of_start_of_ras_flows_to_replace=first_index_usgs+parseInt(RAStieINlower.value)  // this will be + negative since its on the left side.
+						max_ras_record_to_adjust= index_of_start_of_ras_flows_to_replace + Math.abs(parseInt(RAStieINlower.value)) -1
+					}
+
+					
+					
+					for(j in combined_curve_XY_crossing){
+						j_int=parseInt(j)	
+						if(j_int>=index_of_start_of_ras_flows_to_replace && j_int<= max_ras_record_to_adjust){
+							index_of_ras_flows_to_replace.push(j_int)  
+						}
+					}
+					
+					// Perform non-linear regression on the second part of the arrays
+					let resultPolynomial = regression.polynomial(combined_curve_XY_crossing, {
+					  order: parseInt(polyorder.value),
+					  precision: 20
+					});
+					
+					//combined_curve_XY_crossing.pop()
+					//resultLinear = regression.linear(combined_curve_XY_crossing)
+					//for(j in combined_curve_XY_crossing){
+					//	if( index_of_flows_that_are_usgs_only_blue.includes(parseInt(j))){
+					//		m2 = combined_curve_XY_crossing.slice(0);
+					//		m2 = combined_curve_XY_crossing.slice(0);
+					//	}	
+					//}
+					
+					
+					for(j in combined_curve_XY_crossing){
+						int_j=parseInt(j)
+						xy=combined_curve_XY_crossing[int_j]
+						elev=xy[0]
+						
+						if(index_of_ras_flows_to_replace.includes(int_j)){
+							//if(polyorder.value>1){
+						
+								predicted_flow=resultPolynomial.predict(elev)
+							//}else{
+								//predicted_flow=resultLinear.predict(elev)
+							//}	
+							
+							final_curveY_flows[int_j]=parseInt(predicted_flow[1]) 
+							index_of_flows_that_are_transition_only_yellow.push(int_j)
+							
+						}	
+						
+					}
+					
+					return index_of_flows_that_are_transition_only_yellow
+				}
+			
+				
+			</script>
+			
+			
+
+  </head>
+  
+  
+  <body>
+    <header>
+      <h1 id="banner">MMC RIM Rating Curves (Alpha)</h1>
+	  
+    </header>
+
+    <div class="container">
+			  <div>
+				<h2>1. USGS Curve</h2>    <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+				<form >
+				  <div>
+					<label for="usgs-id">USGS ID: 
+						<a href="#" target=_blank onclick="javascript:openlink()">curve</a>
+						<a href="#" target=_blank onclick="javascript:openlink('info')">gage info</a>
+						
+						</label> 
+					<input type="text" id="usgs-id" value="07183300">
+				  </div>
+				  <div>
+					<label for="gage-0-in-88">Gage 0 in 88:</label>
+					<input type="number" id="gage-0-in-88" value="851.4" step="0.1">
+				  </div>
+				  <div>
+					<label for="data-input-usgs">Paste flow(x), elev(y) data:</label>
+					<textarea id="data-input-usgs"></textarea>
+				  </div>
+				  <input id="data-input-usgs-button" type="submit" value="Submit">
+				</form>
+			  </div>	
+		
+			  <div>
+				<h2>2. RAS Curve</h2>    <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+				<form>
+				  <div>
+					<label for="data-input-usgs">Paste flow(x), elev(y) data:</label>
+					<textarea class="textarea-ras" id="data-input-ras"></textarea>
+				  </div>
+				  <input id="create-graph" type="submit" value="Create Graph">
+				</form>
+			  </div>
+			  <div class='final-curve-div'>
+				<h2>3. Combined Curve</h2> <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+				  In table <b>below</b><br>
+				  1. Adjust flows (in RAS section)<br> to adjust black curve 
+				  <br>
+				  2. <b>Initialize</b> first, then <b>Optimize </b>
+				  <br><br> 
+				  <div style="display:inline;font-size:12px;border:1px solid black;width:90px;background-color:lightblue;text-align: center">USGS</div>
+				  <div style="display:inline;font-size:12px;border:1px solid black;width:90px;background-color:yellow;text-align: center">RAS blend</div>
+				  <div style="display:inline;font-size:12px;border:1px solid black;width:90px;background-color:lightgrey;text-align: center">RAS</div>
+				  <br><br>
+				 
+				  
+				  Adjust Increment: <select name="incrementValue" id="incrementValue">
+					  <option value=1>1</option>
+					  <option value=10>10</option>
+					  <option value=100>100</option>
+					  <option selected value=1000>1000</option>
+					  <option value=5000>5000</option>
+				  </select>
+				  <br><br>
+				<form>
+				  
+				  <div>
+						<table id="myTable">
+						  <thead>
+							<tr>
+							  <th>Flow +</th>	
+							  <th>Flow -</th>	
+							  <th>Flow</th>
+							  <th>Elev</th>
+							  
+							</tr>
+						  </thead>
+						  <tbody>
+						  </tbody>
+						</table>
+				  </div>
+				  <br>
+				  <input id="add-final-curve" type="submit" value="Initliaze (Reset) Curve">
+				  
+				  <br><br>
+				  
+				  <input id="copy-flow" type="submit" value="Copy Flow">
+				 
+				  <br><br>
+				  <div style="border-top:1px solid black;border-bottom:1px solid black;padding-top:5px;width:200px">
+					<input id="non-linear-reg" type="submit" value="Optimize">
+					
+				    Order:<input   style="width:50px" id="polyorder" max=6 type="number" name="polyorder" value=2  />
+				    <br>
+					RAS Tie-in Upper:&nbsp;&nbsp;<input   style="width:50px" id="RAStieINuppper" min=0 type="number" name="RAStieINuppper" value=3  />
+					RAS Tie-in Lower:&nbsp;&nbsp;<input   style="width:50px" id="RAStieINlower"  max=0 type="number" name="RAStieINlower" value=0  />
+					
+				    
+				    <br>
+					<div class="advancedOptimize" >	
+						<input type="checkbox" id="removeOutliers"   />Remove Outliers
+					</div>	
+				  </div>
+				</form>
+				
+			  </div>	 
+
+
+
+			<div class="chart-container-div"  >
+				  <canvas id="chartJSContainer" ></canvas>
+				  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+				  
+			</div>	
+			
+	
+	</div>
+  </body>	
+  
+  
